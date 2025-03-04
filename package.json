@@ -12,6 +12,7 @@
   ],
   "scripts": {
     "build": "tsc && tsc-alias",
+    "vercel-build": "tsc && tsc-alias && mkdir -p public",
     "type-check": "tsc --noEmit",
     "start": "node dist/index.js",
     "start:cli": "cross-env NODE_ENV=cli node dist/index.js",

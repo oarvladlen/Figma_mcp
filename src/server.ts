@@ -129,9 +129,29 @@ export class FigmaMcpServer {
   }
 
   async connect(transport: Transport): Promise<void> {
-    console.log("Connecting to transport...");
     await this.server.connect(transport);
-    console.log("Server connected and ready to process requests");
+  }
+
+  // Create a new method to create SSE transport for serverless functions
+  createSseTransport(res: Response): SSEServerTransport {
+    this.sseTransport = new SSEServerTransport(
+      "/messages",
+      res as unknown as ServerResponse<IncomingMessage>,
+    );
+    return this.sseTransport;
+  }
+
+  // Create a new method to handle messages for serverless functions
+  async handleMessages(req: Request, res: Response): Promise<void> {
+    if (!this.sseTransport) {
+      res.status(400).send("No SSE connection established");
+      return;
+    }
+    
+    await this.sseTransport.handlePostMessage(
+      req as unknown as IncomingMessage,
+      res as unknown as ServerResponse<IncomingMessage>,
+    );
   }
 
   async startHttpServer(port: number): Promise<void> {
