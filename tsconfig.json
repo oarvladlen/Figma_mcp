@@ -19,8 +19,9 @@
     },
     "preserveSymlinks": true,
     "allowJs": true,
-    "removeComments": true
+    "removeComments": true,
+    "typeRoots": ["./node_modules/@types", "./types"]
   },
-  "include": ["src/**/*", "api/**/*"],
+  "include": ["src/**/*", "api/**/*", "types/**/*"],
   "exclude": ["node_modules", "dist"]
 }

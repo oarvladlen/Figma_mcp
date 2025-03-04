@@ -1,11 +1,19 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { FigmaService } from "./services/figma";
-import express, { Request, Response } from "express";
+import express from "express";
+import { Response as ExpressResponse, Request as ExpressRequest } from "express";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { IncomingMessage, ServerResponse } from "http";
 import { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import { SimplifiedDesign } from "./services/simplify-node-response";
+
+// Define a more specific response type that includes the methods we use
+interface TypedResponse extends ExpressResponse {
+  status(code: number): TypedResponse;
+  send(body: any): TypedResponse;
+  sendStatus(code: number): TypedResponse;
+}
 
 export class FigmaMcpServer {
   private readonly server: McpServer;
@@ -133,7 +141,7 @@ export class FigmaMcpServer {
   }
 
   // Create a new method to create SSE transport for serverless functions
-  createSseTransport(res: Response): SSEServerTransport {
+  createSseTransport(res: ExpressResponse): SSEServerTransport {
     this.sseTransport = new SSEServerTransport(
       "/messages",
       res as unknown as ServerResponse<IncomingMessage>,
@@ -142,9 +150,9 @@ export class FigmaMcpServer {
   }
 
   // Create a new method to handle messages for serverless functions
-  async handleMessages(req: Request, res: Response): Promise<void> {
+  async handleMessages(req: ExpressRequest, res: ExpressResponse): Promise<void> {
     if (!this.sseTransport) {
-      res.status(400).send("No SSE connection established");
+      (res as TypedResponse).status(400).send("No SSE connection established");
       return;
     }
     
@@ -157,7 +165,7 @@ export class FigmaMcpServer {
   async startHttpServer(port: number): Promise<void> {
     const app = express();
 
-    app.get("/sse", async (req: Request, res: Response) => {
+    app.get("/sse", async (req: ExpressRequest, res: ExpressResponse) => {
       console.log("New SSE connection established");
       this.sseTransport = new SSEServerTransport(
         "/messages",
@@ -166,10 +174,10 @@ export class FigmaMcpServer {
       await this.server.connect(this.sseTransport);
     });
 
-    app.post("/messages", async (req: Request, res: Response) => {
+    app.post("/messages", async (req: ExpressRequest, res: ExpressResponse) => {
       if (!this.sseTransport) {
-        // @ts-expect-error Not sure why Express types aren't working
-        res.sendStatus(400);
+        // Use type assertion to fix the TypeScript error
+        (res as TypedResponse).sendStatus(400);
         return;
       }
       await this.sseTransport.handlePostMessage(
