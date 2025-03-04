@@ -20,7 +20,7 @@ app.post("/messages", async (req: Request, res: Response) => {
 });
 
 app.get("/", (req: Request, res: Response) => {
-  res.send("Figma MCP Server is running!");
+  res.status(200).send("Figma MCP Server is running!");
 });
 
 export async function startServer(): Promise<void> {
